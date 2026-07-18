@@ -3,7 +3,8 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
+from sentiment import detect_sentiment, score_frame
 
 
 TEXT_COLUMNS = ("text", "content", "tweet_text", "full_text", "body")
@@ -11,19 +12,6 @@ TEXT_COLUMNS = ("text", "content", "tweet_text", "full_text", "body")
 
 st.set_page_config(page_title="Sentiment Dashboard", layout="wide")
 st.title("Sentiment Dashboard")
-
-analyzer = SentimentIntensityAnalyzer()
-
-
-def detect_sentiment(text):
-    scores = analyzer.polarity_scores(text)
-    compound = scores["compound"]
-    if compound >= 0.05:
-        return "Positive"
-    if compound <= -0.05:
-        return "Negative"
-    return "Neutral"
-
 
 def text_column(frame):
     for column in TEXT_COLUMNS:
@@ -83,8 +71,7 @@ with tab_batch:
             if column is None:
                 st.error("Add a text, content, tweet_text, full_text, or body column.")
             else:
-                result = frame.copy()
-                result["sentiment"] = result[column].fillna("").map(detect_sentiment)
+                result = score_frame(frame, column)
                 st.dataframe(result[[column, "sentiment"]], use_container_width=True)
                 summary = result["sentiment"].value_counts().rename_axis("sentiment")
                 st.bar_chart(summary)
